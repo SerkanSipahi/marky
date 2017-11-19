@@ -8,17 +8,6 @@ import (
 	"strings"
 )
 
-func NewMarkdown(text string) *Markdown {
-
-	if text == "" {
-		return &Markdown{}
-	}
-
-	return &Markdown{
-		Text: text,
-	}
-}
-
 var (
 	hTagRegex        = regexp.MustCompile(`^(#+).*`)
 	pTagRegex        = regexp.MustCompile(`^[^#]+`)
@@ -30,9 +19,19 @@ var (
 	ErrMarkdownTemplateFound = errors.New("No markup found")
 )
 
+func NewMarkdown(text string) *Markdown {
+
+	if text == "" {
+		return &Markdown{}
+	}
+
+	return &Markdown{
+		MarkdownTemplate: text,
+	}
+}
+
 type Markdown struct {
-	Text string
-	Html string
+	MarkdownTemplate string
 }
 
 func CreateHeaderTag(text string, size int) string {
@@ -55,55 +54,73 @@ func CreateStrongTag(text string) string {
 	return "<strong>" + text + "</strong>"
 }
 
+func RenderLines(text string) string {
+
+	renderedText := ""
+
+	if matched := hTagRegex.FindStringSubmatch(text); len(matched) == 2 {
+		headerSize := len(matched[1])
+		renderedText += CreateHeaderTag(text[headerSize:], headerSize)
+	} else if matched := pTagRegex.FindStringSubmatch(text); len(matched) == 1 {
+		renderedText += CreatePTag(matched[0])
+	}
+
+	return renderedText
+}
+
+func RenderLinks(text string) string {
+
+	for {
+		if matched := linkTagRegex.FindStringSubmatch(text); len(matched) == 4 {
+			text = strings.Replace(text, matched[1], CreateLinkTag(matched[2], matched[3]), -1)
+		} else {
+			break
+		}
+	}
+
+	return text
+}
+
+func RenderHighlightTags(text string) string {
+
+	for {
+		if matched := strongEmTagRegex.FindStringSubmatch(text); len(matched) == 2 {
+			emTag := CreateEmTag(matched[1])
+			strongTag := CreateStrongTag(emTag)
+			text = strings.Replace(text, matched[0], strongTag, -1)
+		} else if matched := strongTagRegex.FindStringSubmatch(text); len(matched) == 2 {
+			strongTag := CreateStrongTag(matched[1])
+			text = strings.Replace(text, matched[0], strongTag, -1)
+		} else if matched := emTagRegex.FindStringSubmatch(text); len(matched) == 2 {
+			emTag := CreateEmTag(matched[1])
+			text = strings.Replace(text, matched[0], emTag, -1)
+		} else {
+			break
+		}
+	}
+
+	return text
+}
+
 func (md *Markdown) Compile() string {
 
-	if md.Text == "" {
+	if md.MarkdownTemplate == "" {
 		return ""
 	}
 
-	// init line by line scanner
-	scanner := bufio.NewScanner(strings.NewReader(md.Text))
+	renderedHtml := ""
+	scanner := bufio.NewScanner(strings.NewReader(md.MarkdownTemplate))
 	scanner.Split(bufio.ScanLines)
-
 	for scanner.Scan() {
 
+		// get text line
 		text := scanner.Text()
 
-		// render lines (header and paragraph)
-		if matched := hTagRegex.FindStringSubmatch(text); len(matched) == 2 {
-			headerSize := len(matched[1])
-			md.Html += CreateHeaderTag(text[headerSize:], headerSize)
-		} else if matched := pTagRegex.FindStringSubmatch(text); len(matched) == 1 {
-			md.Html += CreatePTag(matched[0])
-		}
-
-		// render links
-		for {
-			if matched := linkTagRegex.FindStringSubmatch(md.Html); len(matched) == 4 {
-				md.Html = strings.Replace(md.Html, matched[1], CreateLinkTag(matched[2], matched[3]), -1)
-			} else {
-				break
-			}
-		}
-
-		// render strong or em
-		for {
-			if matched := strongEmTagRegex.FindStringSubmatch(md.Html); len(matched) == 2 {
-				emTag := CreateEmTag(matched[1])
-				strongTag := CreateStrongTag(emTag)
-				md.Html = strings.Replace(md.Html, matched[0], strongTag, -1)
-			} else if matched := strongTagRegex.FindStringSubmatch(md.Html); len(matched) == 2 {
-				strongTag := CreateStrongTag(matched[1])
-				md.Html = strings.Replace(md.Html, matched[0], strongTag, -1)
-			} else if matched := emTagRegex.FindStringSubmatch(md.Html); len(matched) == 2 {
-				emTag := CreateEmTag(matched[1])
-				md.Html = strings.Replace(md.Html, matched[0], emTag, -1)
-			} else {
-				break
-			}
-		}
-
+		// render markdown template to html
+		renderedHtml += RenderLines(text)
+		renderedHtml = RenderLinks(renderedHtml)
+		renderedHtml = RenderHighlightTags(renderedHtml)
 	}
 
-	return md.Html
+	return renderedHtml
 }
