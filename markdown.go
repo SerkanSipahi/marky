@@ -45,7 +45,7 @@ func CreateHeaderTag(text string, size int, newLine bool) string {
 
 	text = "<h" + strconv.Itoa(size) + ">" + strings.Trim(text, " ") + "</h" + strconv.Itoa(size) + ">"
 	if newLine {
-		text += text + "\n"
+		text = text + "\n"
 	}
 
 	return text
@@ -54,9 +54,9 @@ func CreateHeaderTag(text string, size int, newLine bool) string {
 // CreatePTag creates an <p> paragraph tag
 func CreatePTag(text string, newLine bool) string {
 
-	text = "<p>" + text + "</p>\n"
+	text = "<p>" + text + "</p>"
 	if newLine {
-		text += text + "\n"
+		text = text + "\n"
 	}
 
 	return text
