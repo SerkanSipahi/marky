@@ -36,13 +36,31 @@ type Markdown struct {
 }
 
 // CreateHeaderTag creates a <h{n}> tag by given text and size (h1, h2, ..., ...)
-func CreateHeaderTag(text string, size int) string {
-	return "<h" + strconv.Itoa(size) + ">" + strings.Trim(text, " ") + "</h" + strconv.Itoa(size) + ">\n"
+// There size is limited to 6 according the w3c specification
+// see https://www.w3schools.com/tags/tag_hn.asp
+func CreateHeaderTag(text string, size int, newLine bool) string {
+	if size > 6 {
+		size = 6
+	}
+
+	text = "<h" + strconv.Itoa(size) + ">" + strings.Trim(text, " ") + "</h" + strconv.Itoa(size) + ">"
+	if newLine {
+		text += text + "\n"
+	}
+
+	return text
 }
 
 // CreatePTag creates an <p> paragraph tag
-func CreatePTag(text string) string {
-	return "<p>" + text + "</p>\n"
+func CreatePTag(text string, newLine bool) string {
+
+	text = "<p>" + text + "</p>\n"
+	if newLine {
+		text += text + "\n"
+	}
+
+	return text
+
 }
 
 // CreateLinkTag creates an <a> link by given text and href
@@ -65,15 +83,15 @@ func CreateStrongTag(text string) string {
 // ## Hello  -> becomes -> <h2>Hello</h2>
 // ### Hello -> becomes -> <h3>Hello</h3>
 // and so on ...
-func RenderLines(text string) string {
+func RenderLines(text string, newLine bool) string {
 
 	renderedText := ""
 
 	if matched := hTagRegex.FindStringSubmatch(text); len(matched) == 2 {
 		headerSize := len(matched[1])
-		renderedText += CreateHeaderTag(text[headerSize:], headerSize)
+		renderedText += CreateHeaderTag(text[headerSize:], headerSize, newLine)
 	} else if matched := pTagRegex.FindStringSubmatch(text); len(matched) == 1 {
-		renderedText += CreatePTag(matched[0])
+		renderedText += CreatePTag(matched[0], newLine)
 	}
 
 	return renderedText
@@ -145,7 +163,7 @@ func (md *Markdown) Compile() string {
 		text := scanner.Text()
 
 		// render markdown template to html
-		renderedHtml += RenderLines(text)
+		renderedHtml += RenderLines(text, true)
 		renderedHtml = RenderLinks(renderedHtml)
 		renderedHtml = RenderHighlightTags(renderedHtml)
 	}
