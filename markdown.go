@@ -2,7 +2,6 @@ package marky
 
 import (
 	"bufio"
-	"github.com/pkg/errors"
 	"regexp"
 	"strconv"
 	"strings"
@@ -15,8 +14,6 @@ var (
 	strongEmTagRegex = regexp.MustCompile(`\*\*\*(.*?)\*\*\*`)
 	strongTagRegex   = regexp.MustCompile(`\*\*(.*?)\*\*`)
 	emTagRegex       = regexp.MustCompile(`\*(.*?)\*`)
-
-	ErrMarkdownTemplateFound = errors.New("No markup found")
 )
 
 func NewMarkdown(text string) *Markdown {
