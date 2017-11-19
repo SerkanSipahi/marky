@@ -7,6 +7,7 @@ import (
 	"strings"
 )
 
+// markdown regex´s for h, p, a, strong and em tags
 var (
 	hTagRegex        = regexp.MustCompile(`^(#+).*`)
 	pTagRegex        = regexp.MustCompile(`^[^#]+`)
@@ -16,41 +17,54 @@ var (
 	emTagRegex       = regexp.MustCompile(`\*(.*?)\*`)
 )
 
+// marky.NewMarkdown creates an instance of Markdown module
+// which can receive a markdown text that can be compiled with
+// Markdown.Compile() to html
 func NewMarkdown(text string) *Markdown {
 
 	if text == "" {
 		return &Markdown{}
 	}
-
 	return &Markdown{
 		MarkdownTemplate: text,
 	}
 }
 
+// Markdown struct which holds the markdown template
 type Markdown struct {
 	MarkdownTemplate string
 }
 
+// CreateHeaderTag creates a <h{n}> tag by given text and size (h1, h2, ..., ...)
 func CreateHeaderTag(text string, size int) string {
 	return "<h" + strconv.Itoa(size) + ">" + strings.Trim(text, " ") + "</h" + strconv.Itoa(size) + ">\n"
 }
 
+// CreatePTag creates an <p> paragraph tag
 func CreatePTag(text string) string {
 	return "<p>" + text + "</p>\n"
 }
 
+// CreateLinkTag creates an <a> link by given text and href
 func CreateLinkTag(text, href string) string {
 	return "<a href='" + href + "'>" + text + "</a>"
 }
 
+// CreateEmTag creates an <em> tag by given text
 func CreateEmTag(text string) string {
 	return "<em>" + text + "</em>"
 }
 
+// CreateStrongTag creates a <strong> tag by given text
 func CreateStrongTag(text string) string {
 	return "<strong>" + text + "</strong>"
 }
 
+// RenderLines renders the typical markdown header tags to html.
+// # Hello   -> becomes -> <h1>Hello</h1>
+// ## Hello  -> becomes -> <h2>Hello</h2>
+// ### Hello -> becomes -> <h3>Hello</h3>
+// and so on ...
 func RenderLines(text string) string {
 
 	renderedText := ""
@@ -65,6 +79,8 @@ func RenderLines(text string) string {
 	return renderedText
 }
 
+// RenderLinks renders the typical markdown a link to html.
+// [Linkname](http://example.com) -> becomes -> <a href="http://example.com">Link</a>
 func RenderLinks(text string) string {
 
 	for {
@@ -78,31 +94,46 @@ func RenderLinks(text string) string {
 	return text
 }
 
+// RenderHighlightTags render string and em tags.
+// string and em (***some text*** —> <strong><em>some text</em></strong> )
+// strong (**some text** —> <strong>some text<strong> )
+// emphasized (*some text* —> <em>some text</em> )
 func RenderHighlightTags(text string) string {
 
 	for {
+		// render string and em
 		if matched := strongEmTagRegex.FindStringSubmatch(text); len(matched) == 2 {
 			emTag := CreateEmTag(matched[1])
 			strongTag := CreateStrongTag(emTag)
 			text = strings.Replace(text, matched[0], strongTag, -1)
-		} else if matched := strongTagRegex.FindStringSubmatch(text); len(matched) == 2 {
+			continue
+		}
+
+		// render strong
+		if matched := strongTagRegex.FindStringSubmatch(text); len(matched) == 2 {
 			strongTag := CreateStrongTag(matched[1])
 			text = strings.Replace(text, matched[0], strongTag, -1)
-		} else if matched := emTagRegex.FindStringSubmatch(text); len(matched) == 2 {
+			continue
+		}
+
+		// render emphasized
+		if matched := emTagRegex.FindStringSubmatch(text); len(matched) == 2 {
 			emTag := CreateEmTag(matched[1])
 			text = strings.Replace(text, matched[0], emTag, -1)
-		} else {
-			break
+			continue
 		}
+
+		// nothing more to render
+		return text
 	}
 
-	return text
 }
 
+// Compile renders and returns markdown template to html
 func (md *Markdown) Compile() string {
 
 	if md.MarkdownTemplate == "" {
-		return ""
+		return md.MarkdownTemplate
 	}
 
 	renderedHtml := ""
