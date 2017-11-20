@@ -2,6 +2,7 @@
 
 ### Features of markdown module
 * header, paragraph, emphasized, strong and link
+* protect from xss
 
 ### Requirements
 * Golang >= 1.9
