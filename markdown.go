@@ -2,6 +2,7 @@ package marky
 
 import (
 	"bufio"
+	"net/url"
 	"regexp"
 	"strconv"
 	"strings"
@@ -65,7 +66,11 @@ func CreatePTag(text string, newLine bool) string {
 
 // CreateLinkTag creates an <a> link by given text and href
 func CreateLinkTag(text, href string) string {
-	return "<a href='" + href + "'>" + text + "</a>"
+	Url, err := url.Parse(href)
+	if err != nil {
+		panic("boom")
+	}
+	return "<a href='" + Url.String() + "'>" + text + "</a>"
 }
 
 // CreateEmTag creates an <em> tag by given text
@@ -100,7 +105,6 @@ func RenderLines(text string, newLine bool) string {
 // RenderLinks renders the typical markdown a link to html.
 // [Linkname](http://example.com) -> becomes -> <a href="http://example.com">Link</a>
 func RenderLinks(text string) string {
-
 	for {
 		if matched := linkTagRegex.FindStringSubmatch(text); len(matched) == 4 {
 			text = strings.Replace(text, matched[1], CreateLinkTag(matched[2], matched[3]), -1)

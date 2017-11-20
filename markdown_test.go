@@ -100,6 +100,16 @@ func TestCreateLinkTag(t *testing.T) {
 		)
 	}
 
+	expectedTag = "<a href='http://example.com/%3Cscript%3Ealert%28%27xss%27%29%3C/script%3E'>Hello World</a>"
+	createdTags = marky.CreateLinkTag("Hello World", "http://example.com/<script>alert('xss')</script>")
+
+	if createdTags != expectedTag {
+		t.Error(
+			"expected", expectedTag,
+			"got", createdTags,
+		)
+	}
+
 }
 
 func TestCreateEmTag(t *testing.T) {
